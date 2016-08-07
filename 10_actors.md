@@ -28,12 +28,12 @@ public class MyUntypedActor extends UntypedActor {
 
 ### Props
 Props是一个用来在创建actor时指定选项的配置类。 以下是使用如何创建Props实例的示例。 
-```
+```java
 import akka.actor.Props;
 import akka.japi.Creator;
 ```
 
-```
+```java
 static class MyActorC implements Creator<MyActor> {
   @Override public MyActor create() {
     return new MyActor("...");
@@ -47,7 +47,7 @@ static class MyActorC implements Creator<MyActor> {
 第二行展示如何通过构造参数创建一个actor.施工中存在一个匹配的构造函数验证Props的对象,如果没有发现或多了匹配的构造函数抛出一个IllegalArgumentException。
 
 第三行演示了Creator的使用.creator类也许是一个静态类,这个类会在Props创建的时候校验.泛型是用来确定生产actor类,如果不使用泛型,需要填写Actor。实例:
-```
+```java
 static class ParametricCreator<T extends MyActor> implements Creator<T> {
   @Override public T create() {
     // ... fabricate actor here
@@ -58,7 +58,7 @@ static class ParametricCreator<T extends MyActor> implements Creator<T> {
 
 #### 建议实践
 提供在UntypedActor中提供静态工厂方法来创建一套Props尽可能使actor一致是一个好主意.
-```
+```java
 public class DemoActor extends UntypedActor {
   
   /**
@@ -94,7 +94,7 @@ public class DemoActor extends UntypedActor {
   system.actorOf(DemoActor.props(42), "demo");
 ```
 另一个好的实践是通过声明actor的消息类(例如:在Actor内部声明静态消息类,或者使用其他合适的类),让接受方能更容易知道接受的是什么信息.
-```
+```java
 public class DemoMessagesActor extends UntypedActor {
  
   static public class Greeting {
@@ -120,11 +120,11 @@ public class DemoMessagesActor extends UntypedActor {
 
 ###使用Props创建Actor
 Actor可以通过将 Props 实例传入 ActorSystem和ActorContext的actorOf 工厂方法来创建。
-```
+```java
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 ```
-```
+```java
 // ActorSystem is a heavy object: create only one per application
 final ActorSystem system = ActorSystem.create("MySystem");
 final ActorRef myActor = system.actorOf(Props.create(MyUntypedActor.class),"myactor");
@@ -149,11 +149,11 @@ actor在创建时，会自动异步启动。
 ##依赖注入
 如果你的UntypedActor有带参数的构造函数，则这些参数也需要成为Props的一部分，如上文所述。
 但有些情况下必须使用工厂方法，例如，当实际构造函数的参数由依赖注入框架决定。
-```
+```java
 import akka.actor.Actor;
 import akka.actor.IndirectActorProducer;
 ```
-```
+```java
 class DependencyInjector implements IndirectActorProducer {
   final Object applicationContext;
   final String beanName;
@@ -190,7 +190,7 @@ class DependencyInjector implements IndirectActorProducer {
 ##收件箱
 当编写代码在actor之外让actor进行通信,询问匹配是一个解决方案,但是有2件事情不能做到,接受多个回复(例如:通过描述一个ActorRef
 到一个通知服务),监控其他actor的生命周期.Inbox类可以满足需求:
-```
+```java
 final Inbox inbox = Inbox.create(system);
 inbox.send(target, "hello");
 try {
@@ -201,7 +201,7 @@ try {
 ```
 send方法包装了一个普通tell方法,提供内部的到sender发送方的actor引用.这允许在最后一行接收
 回复.监控一个actor就是如此简单:
-```
+```java
 final Inbox inbox = Inbox.create(system);
 inbox.watch(target);
 target.tell(PoisonPill.getInstance(), ActorRef.noSender());

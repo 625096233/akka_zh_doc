@@ -75,7 +75,7 @@ helloworld项目pom.xml文件:
 ```
 
 Helloworld.java
-```
+```java
 package sample.hello;
 
 import akka.actor.Props;
@@ -147,7 +147,7 @@ Main.java实际上只是一个小包装的通用类akka.Main,它只需要一个�
 
 如果你需要比akka.Main更多的控制启动代码,你可以参考Main2.java编写自己的主类.
 Main2.java
-```
+```java
 package sample.hello;
 
 import akka.actor.ActorRef;
