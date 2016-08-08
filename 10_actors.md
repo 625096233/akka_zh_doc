@@ -44,7 +44,7 @@ static class MyActorC implements Creator<MyActor> {
   Props props2 = Props.create(MyActor.class, "...");
   Props props3 = Props.create(new MyActorC());
 ```
-第二行展示如何通过构造参数创建一个actor.施工中存在一个匹配的构造函数验证Props的对象,如果没有发现或多了匹配的构造函数抛出一个IllegalArgumentException。
+第二行展示如何通过构造参数创建一个actor.该方法匹配actor的构造函数来创建Props的对象,如果没有发现或匹配了多个构造函数抛出一个IllegalArgumentException。
 
 第三行演示了Creator的使用.creator类也许是一个静态类,这个类会在Props创建的时候校验.泛型是用来确定生产actor类,如果不使用泛型,需要填写Actor。实例:
 ```java
