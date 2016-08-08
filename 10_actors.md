@@ -27,12 +27,13 @@ public class MyUntypedActor extends UntypedActor {
 ```
 
 ### 10.1.2 Props
-Props是一个用来在创建actor时指定选项的配置类。 以下是使用如何创建Props实例的示例。 
+Props是一个用来在创建actor时指定选项的配置类。 以下是使用如何创建Props实例的示例。 首先需要导入akka.actor.Props和akka.japi.Creator.
 ```java
 import akka.actor.Props;
 import akka.japi.Creator;
 ```
-
+创建Props对象的方法有两种,一种是通过构造参数创建一个actor.如:props1和props2通过匹配actor的构造函数来创建Props的对象,如果没有发现或匹配了多个构造函数抛出一个IllegalArgumentException;
+第二种是通过akka.japi.Creator实现类来创建,如props3通过使用akka.japi.Creator接口实现类来创建Props对象.
 ```java
 static class MyActorC implements Creator<MyActor> {
   @Override public MyActor create() {
@@ -44,9 +45,8 @@ static class MyActorC implements Creator<MyActor> {
   Props props2 = Props.create(MyActor.class, "...");
   Props props3 = Props.create(new MyActorC());
 ```
-第二行展示如何通过构造参数创建一个actor.该方法匹配actor的构造函数来创建Props的对象,如果没有发现或匹配了多个构造函数抛出一个IllegalArgumentException。
 
-第三行演示了Creator的使用.creator类也许是一个静态类,这个类会在Props创建的时候校验.泛型是用来确定生产actor类,如果不使用泛型,需要填写Actor。实例:
+下面Creator的使用.creator类也许是一个静态类,这个类会在Props创建的时候校验.泛型是用来确定生产actor类,如果不使用泛型,需要填写Actor。实例:
 ```java
 static class ParametricCreator<T extends MyActor> implements Creator<T> {
   @Override public T create() {
@@ -138,13 +138,13 @@ class A extends UntypedActor {
 }
 ```
 
-推荐创建一个包含子actor、孙子等等的层次结构，使之符合应用的逻辑错误处理结构，见Actor系统。
+推荐创建一个包含子、孙子等等的层次结构，使之符合应用的逻辑错误处理结构，见[Actor系统](./02_actor_system.md) 。
 
-对actorOf的调用返回一个ActorRef实例。它是actor实例的句柄，并且是与之进行交互的唯一方法。ActorRef是不可变的，与其代表的actor有一一对应关系。ActorRef也可序列化，并能通过网络传输。这意味着你可以将其序列化，通过网线发送，并在远程主机上使用它，而且虽然跨网络，它将仍然代表在原始节点上相同的actor。
+对actorOf的调用返回一个ActorRef实例。ActorRef是actor实例的句柄，并且是与actor实例进行交互的唯一方法。ActorRef是不可变的并且与actor是一一对应的关系。ActorRef也可序列化，并能通过网络传输。这意味着你可以将其序列化，通过网线发送，并在远程主机上使用它，而且虽然跨网络，它将仍然代表在原始节点上相同的actor。
 
-名称参数是可选的，不过你应该良好命名你的actor，因为名称将被用于日志打印和标识actor。名称不能为空，且不能以$开头，不过它可以包含URL编码字符（如空格用%20表示）。如果给定的名称已经被同一个父亲下的另一个子actor使用，则会抛出一个InvalidActorNameException。
+actor的名称参数是可选的，不过你应该给actor起个好名字，因为名称将被用于日志打印和标识actor。名称不能为空，且不能以$开头，不过它可以包含URL编码字符（如空格用%20表示）。如果给定的名称已经被同一个父亲下的另一个子actor使用，则会抛出一个InvalidActorNameException。
 
-actor在创建时，会自动异步启动。
+当actor创建的时候,它会自动异步启动。
 
 ##10.1.4 依赖注入
 如果你的UntypedActor有带参数的构造函数，则这些参数也需要成为Props的一部分，如上文所述。
@@ -188,8 +188,8 @@ class DependencyInjector implements IndirectActorProducer {
 
 
 ###10.1.5 收件箱
-当编写代码在actor之外让actor进行通信,询问匹配是一个解决方案,但是有2件事情不能做到,接受多个回复(例如:通过描述一个ActorRef
-到一个通知服务),监控其他actor的生命周期.Inbox类可以满足需求:
+当编写代码在actor之外让actor进行通信,询问匹配是一个解决方案,但是有两件事情不能做到,一是接受多个回复(例如:通过描述一个ActorRef
+到一个通知服务),二是监控其他actor的生命周期.Inbox类可以满足需求:
 ```java
 final Inbox inbox = Inbox.create(system);
 inbox.send(target, "hello");
@@ -199,8 +199,7 @@ try {
   // timeout
 }
 ```
-send方法包装了一个普通tell方法,提供内部的到sender发送方的actor引用.这允许在最后一行接收
-回复.监控一个actor就是如此简单:
+send方法包装了一个普通tell方法,提供内部的到sender发送方的actor引用.这允许在最后一行接收回复.监控一个actor就是如此简单:
 ```java
 final Inbox inbox = Inbox.create(system);
 inbox.watch(target);
@@ -212,9 +211,49 @@ try {
 }
 ```
 
+##10.2 UntypedActor API
+UntypedActor只定义了一个抽象方法，就是上面提到的receive, 用来实现actor的行为。
 
+如果当前actor的行为与收到的消息不匹配，建议调用unhandled方法, 它的缺省实现是向actor系统的事件流中发布一条`new akka.actor.UnhandledMessage(message, sender, recipient)`,设置配置项akka.actor.debug.unhandled打开,将它们转换成实际的调试消息。
 
+另外，它还包括:
 
+- self代表本actor的ActorRef
+- sender代表最近收到的消息的发送actor，通常用于下面将讲到的回应消息中
+- supervisorStrategy用户可重写它来定义对子actor的监管策略
+- context暴露actor和当前消息的上下文信息，如：
+    - 用于创建子actor的工厂方法 (actorOf)
+    - actor所属的系统
+    - 父监管者
+    - 所监管的子actor
+    - 生命周期监控
+    - hotswap行为栈，见 Become/Unbecome
 
+剩余的可见方法user-overridable生命周期钩子在以下描述:
+```java
+public void preStart() {
+}
+ 
+public void preRestart(Throwable reason, scala.Option<Object> message) {
+  for (ActorRef each : getContext().getChildren()) {
+    getContext().unwatch(each);
+    getContext().stop(each);
+  }
+  postStop();
+}
+ 
+public void postRestart(Throwable reason) {
+  preStart();
+}
+ 
+public void postStop() {
+}
+```
 
+###10.2.1 actor生命周期
+
+###10.2.2 使用DeathWatch进行生命周期监控
+为了在其它actor结束时 (i.e. 永久终止, 而不是临时的失败和重启)收到通知, actor可以将自己注册为其它actor在终止时所发布的 Terminated 消息 的接收者 (见 停止 Actor). 这个服务是由actor系统的DeathWatch组件提供的。
+
+注册一个监控器很简单：
 
